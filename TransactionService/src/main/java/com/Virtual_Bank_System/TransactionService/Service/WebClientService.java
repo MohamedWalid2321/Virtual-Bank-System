@@ -2,7 +2,6 @@ package com.Virtual_Bank_System.TransactionService.Service;
 
 import com.Virtual_Bank_System.TransactionService.DTO.AccountDTO;
 import com.Virtual_Bank_System.TransactionService.DTO.AccountTransfer;
-import com.Virtual_Bank_System.TransactionService.DTO.TransferInitiationDTO;
 import com.Virtual_Bank_System.TransactionService.Exception.AccountNotFoundById;
 import com.Virtual_Bank_System.TransactionService.Exception.AccountServiceNotWorkingException;
 import com.Virtual_Bank_System.TransactionService.Exception.InsufficientFundsException;
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -35,6 +33,7 @@ public class WebClientService {
             .onStatus(
                 HttpStatusCode::is4xxClientError,
                 clientResponse -> {
+                  System.out.println(clientResponse.statusCode());
                   return Mono.error(new AccountNotFoundById());
                 })
             .onStatus(
@@ -61,28 +60,20 @@ public class WebClientService {
       throw new InsufficientFundsException();
     }
   }
+
   public List<AccountDTO> getActiveSavingsAccounts() {
     try {
-      return accountServiceWebClient.get()
-              .uri("/accounts/active") // directly call the dedicated endpoint
-              .retrieve()
-              .bodyToFlux(AccountDTO.class)
-              .collectList()
-              .block();
+      return accountServiceWebClient
+          .get()
+          .uri("/accounts/active") // directly call the dedicated endpoint
+          .retrieve()
+          .bodyToFlux(AccountDTO.class)
+          .collectList()
+          .block();
     } catch (Exception e) {
       throw new RuntimeException("Failed to fetch accounts from Account Service", e);
     }
   }
-  public void creditInterest(AccountTransfer transferDTO) {
-    try {
-      accountServiceWebClient.put()
-              .uri("/accounts/transfer")
-              .bodyValue(transferDTO)
-              .retrieve()
-              .bodyToMono(Void.class)
-              .block();
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to credit interest to account " + transferDTO.getToAccountId(), e);
-    }
-  }
+
+  public void creditInterest(AccountTransfer transferDTO) {}
 }
